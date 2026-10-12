@@ -13,7 +13,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://aryabhatt-academy-frontend-mhbl3pjpl-trishank08s-projects.vercel.app'
+    'https://aryabhatt-academy-frontend.vercel.app/'
   ]
 }));
 
