@@ -14,6 +14,26 @@ console.log('Password loaded:', !!process.env.EMAIL_PASS)
 console.log('Password length:', process.env.EMAIL_PASS?.length)
 const app = express()
 
+
+
+
+
+import cors from "cors";
+
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://YOUR-FRONTEND.vercel.app"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+app.use(express.json());
+
+
+
+
 app.get("/health", (req, res) => {
   res.status(200).send("Backend is running");
 });

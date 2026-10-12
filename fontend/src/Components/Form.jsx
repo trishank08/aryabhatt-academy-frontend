@@ -27,7 +27,7 @@ const Form = () => {
 
     try {
       const response = await fetch(
-        'http://localhost:5000/api/students/register',
+        'https://aryabhatt-academy-api.onrender.com/api/students/register',
         {
           method: 'POST',
           headers: {
