@@ -1,18 +1,10 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const Student = require('../models/student');
 
 const router = express.Router();
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 router.post('/register', async (req, res) => {
   try {
@@ -25,9 +17,14 @@ router.post('/register', async (req, res) => {
       address
     } = req.body;
 
-    if (!studentName || !fatherName || !contact || !studentClass) {
+    if (
+      !studentName?.trim() ||
+      !fatherName?.trim() ||
+      !contact?.trim() ||
+      !studentClass
+    ) {
       return res.status(400).json({
-        message: 'Please fill all required fields'
+        message: 'Please fill in all required fields.'
       });
     }
 
@@ -43,37 +40,38 @@ router.post('/register', async (req, res) => {
 
     console.log('Student saved:', student._id);
 
-    // Tell frontend registration is saved
-    res.status(201).json({
-      message: 'Registration successful!',
-      studentId: student._id
-    });
-
-    // Send emails
     const details = `
 Student Name: ${student.studentName}
-Father Name: ${student.fatherName}
+Father's Name: ${student.fatherName}
 Contact: ${student.contact}
 Class: ${student.studentClass}
 Email: ${student.email || 'Not provided'}
 Address: ${student.address || 'Not provided'}
 `;
 
-    transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.ADMIN_EMAIL,
-      subject: 'New Student Registration',
-      text: details
-    }).then(() => {
-      console.log('Admin email sent');
-    }).catch(err => {
-      console.log('Admin email failed:', err.message);
+    // Send registration response
+    res.status(201).json({
+      message: 'Registration successful!',
+      studentId: student._id
     });
 
+    // Send email to admin
+    const adminEmail = resend.emails.send({
+      from: 'Aryabhatt Academy <onboarding@resend.dev>',
+      to: [process.env.ADMIN_EMAIL],
+      subject: 'New Student Registration',
+      text: details
+    });
+
+    adminEmail
+      .then(result => console.log('Admin email result:', result))
+      .catch(err => console.error('Admin email failed:', err.message));
+
+    // Send confirmation email to student
     if (student.email) {
-      transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: student.email,
+      resend.emails.send({
+        from: 'Aryabhatt Academy <onboarding@resend.dev>',
+        to: [student.email],
         subject: 'Registration Successful - Aryabhatt Academy',
         text: `Hello ${student.studentName},
 
@@ -81,20 +79,19 @@ Your registration has been received successfully.
 
 Class: ${student.studentClass}
 
-Thank you for registering with Aryabhatt Academy.`
-      }).then(() => {
-        console.log('Student confirmation email sent');
-      }).catch(err => {
-        console.log('Student email failed:', err.message);
-      });
+Thank you for registering with Aryabhatt Academy.
+We will contact you soon.`
+      })
+        .then(result => console.log('Student email result:', result))
+        .catch(err => console.error('Student email failed:', err.message));
     }
 
-  } catch (err) {
-    console.error('Registration failed:', err.message);
+  } catch (error) {
+    console.error('Registration error:', error.message);
 
     if (!res.headersSent) {
       res.status(500).json({
-        message: 'Registration failed. Please try again.'
+        message: 'Registration could not be completed. Please try again.'
       });
     }
   }
