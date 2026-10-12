@@ -14,6 +14,10 @@ console.log('Password loaded:', !!process.env.EMAIL_PASS)
 console.log('Password length:', process.env.EMAIL_PASS?.length)
 const app = express()
 
+app.get("/health", (req, res) => {
+  res.status(200).send("Backend is running");
+});
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173'
 }))
