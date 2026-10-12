@@ -16,6 +16,9 @@ const app = express();
 //     'https://aryabhatt-academy-frontend.vercel.app/'
 //   ]
 // }));
+app.use(cors({
+origin: 'https://aryabhatt-academy-frontend.vercel.app'
+}));
 
 app.use(express.json());
 
