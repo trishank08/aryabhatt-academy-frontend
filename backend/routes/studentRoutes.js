@@ -1,10 +1,41 @@
 const express = require('express');
-const { Resend } = require('resend');
+const { google } = require('googleapis');
 const Student = require('../models/student');
 
 const router = express.Router();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET
+);
+
+oauth2Client.setCredentials({
+  refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+});
+
+const gmail = google.gmail({
+  version: 'v1',
+  auth: oauth2Client
+});
+
+async function sendEmail(to, subject, text) {
+  const message = [
+    `From: ${process.env.EMAIL_USER}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset="UTF-8"',
+    '',
+    text
+  ].join('\r\n');
+
+  await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: {
+      raw: Buffer.from(message).toString('base64url')
+    }
+  });
+}
 
 router.post('/register', async (req, res) => {
   try {
@@ -24,11 +55,10 @@ router.post('/register', async (req, res) => {
       !studentClass
     ) {
       return res.status(400).json({
-        message: 'Please fill in all required fields.'
+        message: 'Please fill all required fields.'
       });
     }
 
-    // Save student in MongoDB
     const student = await Student.create({
       studentName,
       fatherName,
@@ -37,8 +67,6 @@ router.post('/register', async (req, res) => {
       email,
       address
     });
-
-    console.log('Student saved:', student._id);
 
     const details = `
 Student Name: ${student.studentName}
@@ -49,31 +77,24 @@ Email: ${student.email || 'Not provided'}
 Address: ${student.address || 'Not provided'}
 `;
 
-    // Send registration response
     res.status(201).json({
       message: 'Registration successful!',
       studentId: student._id
     });
 
-    // Send email to admin
-    const adminEmail = resend.emails.send({
-      from: 'Aryabhatt Academy <onboarding@resend.dev>',
-      to: [process.env.ADMIN_EMAIL],
-      subject: 'New Student Registration',
-      text: details
+    sendEmail(
+      process.env.ADMIN_EMAIL,
+      'New Student Registration',
+      details
+    ).catch(err => {
+      console.error('Admin email failed:', err.message);
     });
 
-    adminEmail
-      .then(result => console.log('Admin email result:', result))
-      .catch(err => console.error('Admin email failed:', err.message));
-
-    // Send confirmation email to student
     if (student.email) {
-      resend.emails.send({
-        from: 'Aryabhatt Academy <onboarding@resend.dev>',
-        to: [student.email],
-        subject: 'Registration Successful - Aryabhatt Academy',
-        text: `Hello ${student.studentName},
+      sendEmail(
+        student.email,
+        'Registration Successful - Aryabhatt Academy',
+        `Hello ${student.studentName},
 
 Your registration has been received successfully.
 
@@ -81,17 +102,16 @@ Class: ${student.studentClass}
 
 Thank you for registering with Aryabhatt Academy.
 We will contact you soon.`
-      })
-        .then(result => console.log('Student email result:', result))
-        .catch(err => console.error('Student email failed:', err.message));
+      ).catch(err => {
+        console.error('Student email failed:', err.message);
+      });
     }
-
-  } catch (error) {
-    console.error('Registration error:', error.message);
+  } catch (err) {
+    console.error('Registration failed:', err.message);
 
     if (!res.headersSent) {
       res.status(500).json({
-        message: 'Registration could not be completed. Please try again.'
+        message: 'Registration failed. Please try again.'
       });
     }
   }
