@@ -25,6 +25,10 @@ app.get('/', (req, res) => {
   res.send('Student Registration API is running');
 });
 
+app.get('/health', (req, res) => {
+  res.send('Backend is running');
+});
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('MongoDB connected');
