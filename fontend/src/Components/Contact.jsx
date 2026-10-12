@@ -42,16 +42,15 @@ export const Contact = () => {
         </h2>
 
         <div className="w-full h-80 rounded-2xl overflow-hidden">
-          <iframe
-            title="Google Map"
-            src="https://maps.app.goo.gl/SohXujGk7dstB1vQ6"
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-          ></iframe>
+          <iframe 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3753.6884181958785!2d79.79824017533227!3d21.763206380076348!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a2ae91e32854975%3A0x51d9cf4819dad35f!2sARYABHATTA%20ACADEMY!5e1!3m2!1sen!2sin!4v1791783349499!5m2!1sen!2sin"
+           width="600"
+            height="450" 
+            style="border:0;"
+           allowfullscreen="" 
+           loading="lazy" referrerpolicy="strict-origin-when-cross-origin">
+            
+           </iframe>
         </div>
       </div>
 
