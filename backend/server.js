@@ -23,7 +23,7 @@ import cors from "cors";
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://YOUR-FRONTEND.vercel.app"
+    "https://aryabhatt-academy-frontend-mhbl3pjpl-trishank08s-projects.vercel.app/"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
